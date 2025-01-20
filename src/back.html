@@ -64,13 +64,8 @@
         </div>
 
         <!-- The entire definition blockquote -->
-        <div class="def-info-container">
-            <div class="def-info"></div>
-        </div>
+        <div class="def-info-container"><div class="def-info"></div></div>
         <blockquote class="main-def def-blockquote">
-            {{#DefinitionPicture}}
-            <div class="def-image">{{DefinitionPicture}}</div>
-            {{/DefinitionPicture}}
             <div class="definition">
                 {{#SelectionText}}
                 <div id="selection" data-display-name="Text Selection">{{SelectionText}}</div>
@@ -383,7 +378,7 @@
     function cleanUpDefinitions() {
         var primary = document.getElementById("primary");
         var glossaries = document.getElementById("glossaries");
-        if (primary && primary.textContent === "") {
+        if (primary && primary.textContent === "" ) {
             primary.remove();
             primary = null;
         }
@@ -427,7 +422,7 @@
 
         // hide all but first definition
         let definitions = document.querySelectorAll(".main-def > .definition > div");
-        Array.from(definitions).slice(1).forEach(def => { def.classList.add("hidden"); });
+        Array.from(definitions).slice(1).forEach( def => { def.classList.add("hidden"); });
         // no need for toggling on less than 2 definitions
         if (definitions.length < 2) return;
 
@@ -463,35 +458,33 @@
     }
 
     // This just handles clicking and showing images
-    function clickImages() {
+    function clickImage() {
         const modalBg = document.querySelector(".modal-bg");
         const imgPopup = document.querySelector(".img-popup");
-        const images = Array.from(document.querySelectorAll(".image img, .def-image img"));
+        const image = document.querySelector(".image img");
 
-        if (images.length < 1) return;
+        if (!image) return;
 
-        for (let image of images) {
-            image.addEventListener("click", () => {
-                const imgPopupContainer = document.createElement("div");
-                const imgPopupImg = document.createElement("img");
+        image.addEventListener("click", () => {
+            const imgPopupContainer = document.createElement("div");
+            const imgPopupImg = document.createElement("img");
 
-                imgPopupContainer.classList.add("img-popup-container");
-                imgPopupImg.src = image.src;
-                imgPopupImg.classList.add("img-popup-img");
+            imgPopupContainer.classList.add("img-popup-container");
+            imgPopupImg.src = image.src;
+            imgPopupImg.classList.add("img-popup-img");
 
-                if (image.height > image.width) {
-                    imgPopupContainer.style.height = "calc(100% - 20px)";
-                    imgPopupContainer.style.width = "max-content";
-                }
-                imgPopup.innerHTML = "";
-                imgPopup.appendChild(imgPopupContainer);
-                imgPopupContainer.appendChild(imgPopupImg);
+            if (image.height > image.width) {
+                imgPopupContainer.style.height = "calc(100% - 20px)";
+                imgPopupContainer.style.width = "max-content";
+            }
+            imgPopup.innerHTML = "";
+            imgPopup.appendChild(imgPopupContainer);
+            imgPopupContainer.appendChild(imgPopupImg);
 
-                document.body.classList.add("img-popup");
-                modalBg.style.display = "block";
-                imgPopupContainer.style.display = "flex";
-            });
-        }
+            document.body.classList.add("img-popup");
+            modalBg.style.display = "block";
+            imgPopupContainer.style.display = "flex";
+        });
 
         modalBg.addEventListener("click", () => {
             document.body.classList.remove("img-popup");
@@ -531,18 +524,6 @@
         }
     }
 
-    // Sets the height for the Blockquote if there is a maindefpic.
-    function setBlockquoteHeight() {
-        const defImage = document.querySelector('.def-image');
-        const defBlockquote = document.querySelector('.def-blockquote');
-
-        if (defImage && defImage.innerHTML.trim() !== '') {
-            if (defBlockquote) {
-                defBlockquote.style.minHeight = '160px';
-            }
-        }
-    }
-
     // Hides the dictionaries user selected in MainDefinition in Glossary field, if any
     function hideCorrectDefinition() {
         // Do nothing if css rule already exists
@@ -579,10 +560,9 @@
         paintTargetWord();
         constructPitch();
         setUpDefToggle();
-        clickImages();
+        clickImage();
         frequencyHover();
         setDHHeight();
-        setBlockquoteHeight();
         hideCorrectDefinition();
         movePrimaryDicts();
     }

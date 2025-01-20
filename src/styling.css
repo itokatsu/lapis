@@ -396,30 +396,6 @@ header {
     filter: brightness(var(--image-brightness));
 }
 
-.def-image {
-    float: right;
-    margin-left: 10px;
-    margin-top: 10px;
-    max-width: calc(max(35%, 200px));
-    display: flex;
-    flex-flow: column nowrap;
-    justify-content: flex-start;
-    gap: 10px;
-}
-
-.def-image img {
-    object-fit: contain;
-    max-height: 200px;
-    max-width: 200px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: filter 0.3s;
-}
-
-.def-image img:hover {
-    filter: brightness(var(--image-brightness));
-}
-
 /* Image modal css */
 .modal-bg {
     position: fixed;
@@ -741,10 +717,8 @@ summary {
 }
 
 /* reduce indentations of Jitendex for mobile */
-.mobile li[data-dictionary^="Jitendex"] ul,
-.mobile li[data-dictionary^="Jitendex"] ol,
-.mobile li[data-details^="Jitendex"] ul,
-.mobile li[data-details^="Jitendex"] ol {
+.mobile li[data-dictionary^="Jitendex"] ul, .mobile li[data-dictionary^="Jitendex"] ol,
+.mobile li[data-details^="Jitendex"] ul, .mobile li[data-details^="Jitendex"] ol {
     padding-left: 0.3em;
 }
 
