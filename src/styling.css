@@ -870,3 +870,19 @@ ol li[data-details="新和英"] details.glossary-text__details .glossary-text__s
     list-style-type : none;
     padding-inline-start: 0;
 }
+
+.tooltip-content {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 24px;
+    z-index: 1000;
+    display: none; /* Hidden by default */
+}
+
+.hover-kanji {
+    position: relative;
+    cursor: pointer;
+}

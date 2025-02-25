@@ -26,7 +26,7 @@
         <!-- The first row (vocab box+picture) -->
         <div class="def-header">
             <div class="dh-left">
-                <div class="show-furigana vocab">
+                <div class="show-furigana vocab kanji-tooltip">
                     {{#ExpressionFurigana}}{{furigana:ExpressionFurigana}}{{/ExpressionFurigana}}
                     {{^ExpressionFurigana}}{{Expression}}{{/ExpressionFurigana}}
                 </div>
@@ -560,6 +560,134 @@
         }
     }
 
+    // Kanji Hover
+    function setupExpressionHoverListener() {
+        const expressionElements = document.querySelectorAll('.show-furigana.vocab');
+
+        expressionElements.forEach(expressionElement => {
+            expressionElement.addEventListener('mouseenter', function () {
+                if (!expressionElement.dataset.tooltipInitialized) {
+                    addKanjiTooltips(expressionElement);
+                    expressionElement.dataset.tooltipInitialized = "true";
+                }
+            });
+        });
+    }
+
+    function updateKanjiHoverCache(kanji, data) {
+        let cache = window.sessionStorage.getItem('kanjiHoverCache');
+        cache = cache ? JSON.parse(cache) : {};
+        cache[kanji] = data;
+        window.sessionStorage.setItem('kanjiHoverCache', JSON.stringify(cache));
+    }
+
+    async function fetchKanjiData(kanji) {
+        const cache = JSON.parse(window.sessionStorage.getItem('kanjiHoverCache'));
+        if (cache && cache.hasOwnProperty(kanji)) {
+            return cache[kanji];
+        }
+
+        try {
+            // Query AnkiConnect
+            const response = await fetch('http://127.0.0.1:8765', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "findNotes",
+                    version: 6,
+                    params: { query: `"Expression:*${kanji}*" note:MyLapis` }
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (!data.result || data.result.length === 0) return null;
+
+            const noteResponse = await fetch('http://127.0.0.1:8765', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "notesInfo",
+                    version: 6,
+                    params: { notes: data.result }
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const noteData = await noteResponse.json();
+            if (!noteData.result || noteData.result.length === 0) return null;
+
+            // Sort via frequency
+            const sortedData = noteData.result.sort( (a,b) => {
+                const a_freq = a.fields.FreqSort?.value || 999999999;
+                const b_freq = b.fields.FreqSort?.value || 999999999;
+                return a_freq - b_freq;
+            });
+
+            const result = sortedData.map(note => ({
+                word: note.fields.Expression.value,
+                reading: note.fields.ExpressionReading.value,
+                frequency: note.fields.FreqSort?.value || 999999999,
+                sentence: note.fields.Sentence?.value || ""
+            }));
+            updateKanjiHoverCache(kanji, result);
+            return result;
+
+        } catch (error) {
+            console.error("Error fetching kanji data:", error);
+            return null;
+        }
+    }
+
+    async function addKanjiTooltips() {
+        const elements = document.querySelectorAll('.kanji-tooltip');
+        
+        for (let element of elements) {
+            const kanjiMatches = element.innerText.match(/[\u4E00-\u9FAF]/g);
+            if (!kanjiMatches) continue;
+
+            const kanjiSet = new Set(kanjiMatches);
+            for (let kanji of kanjiSet) {
+                const kanjiData = await fetchKanjiData(kanji);
+                if (!kanjiData) continue;
+
+                const filteredKanjiData = kanjiData.filter(entry => entry.word !== `{{Expression}}`);
+                if (filteredKanjiData.length < 1) continue;
+
+                const tooltipHTML = filteredKanjiData.map(entry =>
+                    `<div><strong>${entry.word}</strong> (${entry.reading}) <span style="font-size: 70%">${entry.frequency}</span><br>${entry.sentence}</div>`
+                ).join("<hr>");
+
+                const regex = new RegExp(kanji, "g");
+                element.innerHTML = element.innerHTML.replace(
+                    regex,
+                    `<span class="hover-kanji">${kanji}<span class="tooltip-content">${tooltipHTML}</span></span>`
+                );
+            }
+        }
+
+        document.querySelectorAll('.hover-kanji').forEach(kanjiElement => {
+            kanjiElement.addEventListener('mouseenter', function (event) {
+                showTooltip(event, kanjiElement);
+            });
+
+            kanjiElement.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    function showTooltip(event, kanjiElement) {
+        const tooltip = kanjiElement.querySelector('.tooltip-content');
+        if (!tooltip) return;
+        tooltip.style.left = "-150px";
+        tooltip.style.display = "block";
+        tooltip.style.position = "absolute";
+    }
+
+    function hideTooltip(event) {
+        const tooltip = event.target.querySelector('.tooltip-content');
+        if (tooltip) {
+            tooltip.style.display = "none";
+        }
+    }
+
     // Initialize all functions!!!
     function initialize() {
         tweakHTML();
@@ -571,6 +699,7 @@
         setDHHeight();
         hideCorrectDefinition();
         movePrimaryDicts();
+        setupExpressionHoverListener();
     }
 
     initialize();
