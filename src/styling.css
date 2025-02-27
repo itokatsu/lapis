@@ -872,14 +872,52 @@ ol li[data-details="新和英"] details.glossary-text__details .glossary-text__s
 }
 
 .tooltip-content {
+    display: none;
     position: absolute;
-    background: rgba(0, 0, 0, 0.85);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 24px;
     z-index: 1000;
-    display: none; /* Hidden by default */
+    top: 100%;
+    transform: translateX(-50%);
+    width: calc(var(--max-width) - 100px);
+    max-height: 60vh;
+
+    background-color: black;
+    color: var(--fg-color);
+    font-size: var(--main-def-size);
+
+    overflow-y: auto;
+    padding: 5px 20px;
+    border-radius: 5px;
+    scrollbar-width: thin!important;
+    scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.1); 
+    transition: max-height 0.5s ease, opacity 0.5s ease;
+
+    b {
+        color: aquamarine;
+    }
+
+    .word {
+        font-size: 130%;
+    }
+
+    rt {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    hr {
+        border-color: var(--fg-subtle);
+    }
+
+    .freq {
+        float: right;
+        font-size: 80%;
+        color: var(--fg-subtle);
+    }
+
+    .tooltip-sentence b {
+        font-weight: normal;
+        color: var(--fg-color);
+    }
 }
 
 .hover-kanji {

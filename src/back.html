@@ -54,7 +54,6 @@
                 {{/Picture}}
             </div>
         </div>
-
         <br>
         <div class="sentence">
             {{#SentenceFurigana}} {{furigana:SentenceFurigana}} {{/SentenceFurigana}}
@@ -594,7 +593,7 @@
                 body: JSON.stringify({
                     action: "findNotes",
                     version: 6,
-                    params: { query: `"Expression:*${kanji}*" note:MyLapis` }
+                    params: { query: `Expression:*${kanji}* note:Lapis` }
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -625,6 +624,7 @@
             const result = sortedData.map(note => ({
                 word: note.fields.Expression.value,
                 reading: note.fields.ExpressionReading.value,
+                word_furigana: note.fields.ExpressionFurigana.value,
                 frequency: note.fields.FreqSort?.value || 999999999,
                 sentence: note.fields.Sentence?.value || ""
             }));
@@ -635,6 +635,11 @@
             console.error("Error fetching kanji data:", error);
             return null;
         }
+    }
+
+    function buildFurigana(expressionFurigana, targetKanji) {
+        const ruby = expressionFurigana.replace(/(^|[\s])+([^\[]+)\[([^\]]+)\]/g,"<ruby><rb>$2<rt>$3</rt></rb></ruby>");
+        return ruby.replaceAll(targetKanji, `<b>${targetKanji}</b>`);
     }
 
     async function addKanjiTooltips() {
@@ -653,9 +658,10 @@
                 if (filteredKanjiData.length < 1) continue;
 
                 const tooltipHTML = filteredKanjiData.map(entry =>
-                    `<div><strong>${entry.word}</strong> (${entry.reading}) <span style="font-size: 70%">${entry.frequency}</span><br>${entry.sentence}</div>`
+                    `<div class="heading"><strong class="word">${buildFurigana(entry.word_furigana, kanji)}</strong>
+                    <span class="freq">${entry.frequency}</span></div>
+                    <div class="tooltip-sentence"><span>${entry.sentence}</span></div>`
                 ).join("<hr>");
-
                 const regex = new RegExp(kanji, "g");
                 element.innerHTML = element.innerHTML.replace(
                     regex,
@@ -676,9 +682,7 @@
     function showTooltip(event, kanjiElement) {
         const tooltip = kanjiElement.querySelector('.tooltip-content');
         if (!tooltip) return;
-        tooltip.style.left = "-150px";
         tooltip.style.display = "block";
-        tooltip.style.position = "absolute";
     }
 
     function hideTooltip(event) {
