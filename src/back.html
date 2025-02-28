@@ -593,7 +593,7 @@
                 body: JSON.stringify({
                     action: "findNotes",
                     version: 6,
-                    params: { query: `Expression:*${kanji}* note:Lapis` }
+                    params: { query: `Expression:*${kanji}* note:MyLapis` }
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -625,21 +625,24 @@
                 word: note.fields.Expression.value,
                 reading: note.fields.ExpressionReading.value,
                 word_furigana: note.fields.ExpressionFurigana.value,
+                pitch_position: note.fields.PitchPosition.value,
                 frequency: note.fields.FreqSort?.value || 999999999,
                 sentence: note.fields.Sentence?.value || ""
             }));
-            updateKanjiHoverCache(kanji, result);
-            return result;
+
+            // Remove Duplicates
+            let seen = new Set();
+            const filteredResult = result.filter(function(entry) {
+                let key = entry.word_furigana.trim();
+                return seen.has(key) ? false : seen.add(key);
+            });
+            updateKanjiHoverCache(kanji, filteredResult);
+            return filteredResult;
 
         } catch (error) {
             console.error("Error fetching kanji data:", error);
             return null;
         }
-    }
-
-    function buildFurigana(expressionFurigana, targetKanji) {
-        const ruby = expressionFurigana.replace(/(^|[\s])+([^\[]+)\[([^\]]+)\]/g,"<ruby><rb>$2<rt>$3</rt></rb></ruby>");
-        return ruby.replaceAll(targetKanji, `<b>${targetKanji}</b>`);
     }
 
     async function addKanjiTooltips() {
@@ -657,11 +660,7 @@
                 const filteredKanjiData = kanjiData.filter(entry => entry.word !== `{{Expression}}`);
                 if (filteredKanjiData.length < 1) continue;
 
-                const tooltipHTML = filteredKanjiData.map(entry =>
-                    `<div class="heading"><strong class="word">${buildFurigana(entry.word_furigana, kanji)}</strong>
-                    <span class="freq">${entry.frequency}</span></div>
-                    <div class="tooltip-sentence"><span>${entry.sentence}</span></div>`
-                ).join("<hr>");
+                const tooltipHTML = filteredKanjiData.map(entry => formatTooltipEntry(entry, kanji)).join("<hr>");
                 const regex = new RegExp(kanji, "g");
                 element.innerHTML = element.innerHTML.replace(
                     regex,
@@ -677,6 +676,23 @@
 
             kanjiElement.addEventListener('mouseleave', hideTooltip);
         });
+    }
+
+    function formatTooltipEntry(entry, targetKanji) {
+        let word = entry.word_furigana.replace(/(?:^|[\s])+([^\[]+)\[([^\]]+)\]/g,"<ruby><rb>$1<rt>$2</rt></rb></ruby>");
+        word = word.replaceAll(targetKanji, `<b>${targetKanji}</b>`);
+        
+        const pitchPositions = `${entry.pitch_position}`.match(/^\d+|\d+\b|\d+(?=\w)/g);
+        const uniqPitches = new Set(pitchPositions);
+        const pitchTags = [... uniqPitches].map(pos => pos ? `<li>${pos}</li>` : "").join("");
+        let pitchTagsHTML = "";
+        if (pitchTags) {
+            pitchTagsHTML = `<span id="pitch-tags" style="border-radius: 4px; font-size: 12px; float: left; display: inline"><ul>${pitchTags}</ul></span>`
+        }
+
+        return `<div class="heading"><strong class="word">${word}</strong>${pitchTagsHTML}
+            <span class="freq">${entry.frequency}</span></div>
+            <div class="tooltip-sentence"><span>${entry.sentence}</span></div>`
     }
 
     function showTooltip(event, kanjiElement) {
