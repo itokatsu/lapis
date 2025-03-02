@@ -622,6 +622,7 @@
             });
 
             const result = sortedData.map(note => ({
+                nid: note.noteId,
                 word: note.fields.Expression.value,
                 reading: note.fields.ExpressionReading.value,
                 word_furigana: note.fields.ExpressionFurigana.value,
