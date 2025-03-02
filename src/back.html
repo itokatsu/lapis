@@ -678,21 +678,33 @@
         });
     }
 
+    async function openNoteInBrowser(nid) {
+        return response = await fetch('http://127.0.0.1:8765', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "guiBrowse",
+                    version: 6,
+                    params: { query: `nid:${nid}` }
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+    }
+
     function formatTooltipEntry(entry, targetKanji) {
-        let word = entry.word_furigana.replace(/(?:^|[\s])+([^\[]+)\[([^\]]+)\]/g,"<ruby><rb>$1<rt>$2</rt></rb></ruby>");
+        let word = entry.word_furigana.replace(/(?:^|\s+)([^\[\s]+)\[([^\]]+)\]/g,"<ruby><rb>$1<rt>$2</rt></rb></ruby>");
         word = word.replaceAll(targetKanji, `<b>${targetKanji}</b>`);
-        
+        /*
         const pitchPositions = `${entry.pitch_position}`.match(/^\d+|\d+\b|\d+(?=\w)/g);
         const uniqPitches = new Set(pitchPositions);
         const pitchTags = [... uniqPitches].map(pos => pos ? `<li>${pos}</li>` : "").join("");
         let pitchTagsHTML = "";
         if (pitchTags) {
             pitchTagsHTML = `<span id="pitch-tags" style="border-radius: 4px; font-size: 12px; float: left; display: inline"><ul>${pitchTags}</ul></span>`
-        }
-
-        return `<div class="heading"><strong class="word">${word}</strong>${pitchTagsHTML}
+        }*/
+        return `<div onclick="openNoteInBrowser(${entry.nid})">
+            <div class="heading"><strong class="word">${word}</strong>
             <span class="freq">${entry.frequency}</span></div>
-            <div class="tooltip-sentence"><span>${entry.sentence}</span></div>`
+            <div class="tooltip-sentence"><span>${entry.sentence}</span></div></div>`
     }
 
     function showTooltip(event, kanjiElement) {
