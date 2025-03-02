@@ -659,13 +659,14 @@
                 if (!kanjiData) continue;
 
                 const filteredKanjiData = kanjiData.filter(entry => entry.word !== `{{Expression}}`);
-                if (filteredKanjiData.length < 1) continue;
-
-                const tooltipHTML = filteredKanjiData.map(entry => formatTooltipEntry(entry, kanji)).join("<hr>");
+                let tooltipHTML = "Kanji Not Found.";
+                if (filteredKanjiData.length >= 1) {
+                    tooltipHTML = filteredKanjiData.map(entry => formatTooltipEntry(entry, kanji)).join("<hr>");
+                }
                 const regex = new RegExp(kanji, "g");
                 element.innerHTML = element.innerHTML.replace(
                     regex,
-                    `<span class="hover-kanji">${kanji}<span class="tooltip-content">${tooltipHTML}</span></span>`
+                    `<span class="hover-kanji">${kanji}<span class="tooltip-container"><span class="tooltip-content">${tooltipHTML}</span></span></span>`
                 );
             }
         }
@@ -709,13 +710,13 @@
     }
 
     function showTooltip(event, kanjiElement) {
-        const tooltip = kanjiElement.querySelector('.tooltip-content');
+        const tooltip = kanjiElement.querySelector('.tooltip-container');
         if (!tooltip) return;
-        tooltip.style.display = "block";
+        tooltip.style.display = "inline-block";
     }
 
     function hideTooltip(event) {
-        const tooltip = event.target.querySelector('.tooltip-content');
+        const tooltip = event.target.querySelector('.tooltip-container');
         if (tooltip) {
             tooltip.style.display = "none";
         }
