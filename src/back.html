@@ -559,6 +559,7 @@
         }
     }
 
+
     // Kanji Hover
     function setupExpressionHoverListener() {
         const expressionElements = document.querySelectorAll('.show-furigana.vocab');
@@ -614,14 +615,7 @@
             const noteData = await noteResponse.json();
             if (!noteData.result || noteData.result.length === 0) return null;
 
-            // Sort via frequency
-            const sortedData = noteData.result.sort( (a,b) => {
-                const a_freq = a.fields.FreqSort?.value || 999999999;
-                const b_freq = b.fields.FreqSort?.value || 999999999;
-                return a_freq - b_freq;
-            });
-
-            const result = sortedData.map(note => ({
+            const result = noteData.result.map(note => ({
                 nid: note.noteId,
                 word: note.fields.Expression.value,
                 reading: note.fields.ExpressionReading.value,
@@ -631,9 +625,14 @@
                 sentence: note.fields.Sentence?.value || ""
             }));
 
+            // Sort by frequency
+            const sortedData = result.sort((a,b) => {
+                return a.frequency - b.frequency;
+            });
+
             // Remove Duplicates
             let seen = new Set();
-            const filteredResult = result.filter(function(entry) {
+            const filteredResult = sortedData.filter(function(entry) {
                 let key = entry.word_furigana.trim();
                 return seen.has(key) ? false : seen.add(key);
             });
@@ -654,21 +653,21 @@
             if (!kanjiMatches) continue;
 
             const kanjiSet = new Set(kanjiMatches);
+            let tooltips = {};
             for (let kanji of kanjiSet) {
                 const kanjiData = await fetchKanjiData(kanji);
                 if (!kanjiData) continue;
 
                 const filteredKanjiData = kanjiData.filter(entry => entry.word !== `{{Expression}}`);
-                let tooltipHTML = "Kanji Not Found.";
+                let tooltipContent = "Kanji Not Found.";
                 if (filteredKanjiData.length >= 1) {
-                    tooltipHTML = filteredKanjiData.map(entry => formatTooltipEntry(entry, kanji)).join("<hr>");
+                    tooltipContent = filteredKanjiData.map(entry => formatTooltipEntry(entry, kanji)).join("<hr>");
                 }
-                const regex = new RegExp(kanji, "g");
-                element.innerHTML = element.innerHTML.replace(
-                    regex,
-                    `<span class="hover-kanji">${kanji}<span class="tooltip-container"><span class="tooltip-content">${tooltipHTML}</span></span></span>`
-                );
+                tooltips[kanji] = `<span class="hover-kanji">${kanji}<span class="tooltip-container"><span class="tooltip-content">${tooltipContent}</span></span></span>`;
             }
+            element.innerHTML = element.innerHTML.trim().split('')
+                .map(char => tooltips.hasOwnProperty(char) ? tooltips[char] : char)
+                .join('');
         }
 
         document.querySelectorAll('.hover-kanji').forEach(kanjiElement => {
@@ -681,7 +680,8 @@
     }
 
     async function openNoteInBrowser(nid) {
-        return response = await fetch('http://127.0.0.1:8765', {
+        try {
+            await fetch('http://127.0.0.1:8765', {
                 method: 'POST',
                 body: JSON.stringify({
                     action: "guiBrowse",
@@ -690,19 +690,14 @@
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
+        } catch (error) {
+            console.error("Error opening note in browser", error);
+        }
     }
 
     function formatTooltipEntry(entry, targetKanji) {
         let word = entry.word_furigana.replace(/(?:^|\s+)([^\[\s]+)\[([^\]]+)\]/g,"<ruby><rb>$1<rt>$2</rt></rb></ruby>");
         word = word.replaceAll(targetKanji, `<b>${targetKanji}</b>`);
-        /*
-        const pitchPositions = `${entry.pitch_position}`.match(/^\d+|\d+\b|\d+(?=\w)/g);
-        const uniqPitches = new Set(pitchPositions);
-        const pitchTags = [... uniqPitches].map(pos => pos ? `<li>${pos}</li>` : "").join("");
-        let pitchTagsHTML = "";
-        if (pitchTags) {
-            pitchTagsHTML = `<span id="pitch-tags" style="border-radius: 4px; font-size: 12px; float: left; display: inline"><ul>${pitchTags}</ul></span>`
-        }*/
         return `<div onclick="openNoteInBrowser(${entry.nid})">
             <div class="heading"><strong class="word">${word}</strong>
             <span class="freq">${entry.frequency}</span></div>
@@ -717,9 +712,8 @@
 
     function hideTooltip(event) {
         const tooltip = event.target.querySelector('.tooltip-container');
-        if (tooltip) {
-            tooltip.style.display = "none";
-        }
+        if (!tooltip) return
+        tooltip.style.display = "none";
     }
 
     // Initialize all functions!!!
