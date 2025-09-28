@@ -51,5 +51,6 @@ package.media_files = [
     "media_files/yomitan_audio_2024-07-20-15-08-08-382.ogg",
     "media_files/shoushiminseries04_08m44s853ms_08m47s653ms.ogg",
     "media_files/shoushiminseries04_08m46s485ms.webp",
+    "media_files/yomitan_dictionary_media_1_2024-07-20-15-08-08-382.svg",
 ]
 package.write_to_file(sys.argv[1])
